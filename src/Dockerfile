@@ -1,29 +1,19 @@
-# Use an official Python runtime as a parent image
-FROM python:3.13-slim
+# Use the official lightweight Python image.
+# https://hub.docker.com/_/python
+FROM python:3.10-slim
 
-# Set the working directory in the container
-# We use /app as the root of our project
-WORKDIR /app
+# Allow statements and log messages to immediately appear in the logs
+ENV PYTHONUNBUFFERED True
 
-# Copy the requirements file from the backend directory
-COPY backend/requirements.txt .
+# Copy local code to the container image.
+ENV APP_HOME /app
+WORKDIR $APP_HOME
+COPY . ./
 
-# Install dependencies
+# Install production dependencies.
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the backend, frontend, and docs directories
-# This ensures the relative paths in the code (e.g. static files and docs) remain valid
-COPY backend/ ./backend/
-COPY frontend/ ./frontend/
-COPY docs/ ./docs/
-
-# Expose the port FastAPI is running on
-EXPOSE 8000
-
-# Set Environment Variables
-ENV PYTHONUNBUFFERED=1
-ENV PROJECT_ID=promptwars-gurgaon
-
-# Command to run the application
-# We use -m backend.main to ensure proper module resolution
-CMD ["python", "-m", "backend.main"]
+# Run the web service on container startup. 
+# Use gunicorn as the production-grade web server.
+# For FastAPI, we use uvicorn workers.
+CMD exec gunicorn --bind :$PORT --workers 1 --worker-class uvicorn.workers.UvicornWorker --threads 8 --timeout 0 backend.main:app
