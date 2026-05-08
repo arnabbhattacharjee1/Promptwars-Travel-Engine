@@ -1,7 +1,13 @@
-fastapi
-uvicorn
-pydantic
-google-genai
+# Web Server (Required for Cloud Run)
+gunicorn==20.1.0
+
+# Application Framework
+Flask==2.2.5
+
+# OpenAI Integration (Based on project name)
+openai>=1.0.0
+
+# General Utilities
+requests
+python-dotenv
 pyyaml
-gunicorn
-uvicorn[standard]

@@ -15,5 +15,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Run the web service on container startup. 
 # Use gunicorn as the production-grade web server.
-# For FastAPI, we use uvicorn workers.
-CMD exec gunicorn --bind :$PORT --workers 1 --worker-class uvicorn.workers.UvicornWorker --threads 8 --timeout 0 backend.main:app
+CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 backend.main:app
