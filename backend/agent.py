@@ -1,8 +1,13 @@
 import os
 import yaml
 import json
-from openai import OpenAI
+from google import genai
+from google.genai import types
+from dotenv import load_dotenv
 from typing import Dict, Any
+
+# Load environment variables from .env
+load_dotenv()
 
 # Load Agent Specification
 with open(os.path.join(os.path.dirname(__file__), '..', 'docs', 'agent_specification.yaml'), 'r') as f:
@@ -27,9 +32,12 @@ def construct_system_instruction() -> str:
     """
 
 def query_travel_engine(request_data: Dict[str, Any]) -> dict:
+    api_key = os.getenv("GOOGLE_API_KEY")
+    
     try:
-        # Initialize OpenAI Client (assumes OPENAI_API_KEY is in environment)
-        client = OpenAI()
+        # Initialize Gemini Client
+        # Note: If api_key is missing, this will raise an error and go to fallback
+        client = genai.Client(api_key=api_key)
     except Exception:
         # Fallback dummy response for testing
         return {
@@ -48,7 +56,7 @@ def query_travel_engine(request_data: Dict[str, Any]) -> dict:
             "contingency_plan": ["Fallback transit options identified."],
             "traveler_advisories": ["Standard safety precautions apply."],
             "compliance_status": "Valid",
-            "note": "NOTE: MOCK DATA. Ensure OPENAI_API_KEY is set for real orchestration."
+            "note": "NOTE: MOCK DATA. Ensure GOOGLE_API_KEY is correctly set in your .env for Gemini."
         }
 
     sys_instruct = construct_system_instruction()
@@ -65,15 +73,15 @@ def query_travel_engine(request_data: Dict[str, Any]) -> dict:
     """
     
     try:
-        response = client.chat.completions.create(
-            model="gpt-4-turbo-preview",
-            messages=[
-                {"role": "system", "content": sys_instruct},
-                {"role": "user", "content": user_prompt}
-            ],
-            response_format={ "type": "json_object" },
-            temperature=0.4
+        response = client.models.generate_content(
+            model='gemini-2.5-pro',
+            contents=user_prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=sys_instruct,
+                response_mime_type="application/json",
+                temperature=0.4
+            )
         )
-        return json.loads(response.choices[0].message.content)
+        return json.loads(response.text)
     except Exception as e:
-        return {"error": str(e), "message": "Failed to generate travel plan from OpenAI."}
+        return {"error": str(e), "message": "Failed to generate travel plan from Gemini."}
